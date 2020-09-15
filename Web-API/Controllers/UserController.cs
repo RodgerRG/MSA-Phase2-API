@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Web_API.Data;
@@ -28,6 +29,15 @@ namespace Web_API.Controllers
             _userManager = userManager;
             _signInManager = signInManager;
         }
+
+        //I don't know why CORS doesn't seem to be working, despite being set up in Startup. I'm returning the 200 for the preflight here.
+        /*[HttpOptions]
+        [Route("login")]
+        [AllowAnonymous]
+        public IActionResult PreflightRoute()
+        {
+            return Ok();
+        }*/
 
         [HttpGet("{id}")]
         [AllowAnonymous]

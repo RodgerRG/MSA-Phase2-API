@@ -1,9 +1,5 @@
 {
   "dependencies": {
-    "mssql1": {
-      "type": "mssql.local",
-      "connectionId": "Web_APIContextConnection"
-    },
     "secrets1": {
       "type": "secrets.user"
     }

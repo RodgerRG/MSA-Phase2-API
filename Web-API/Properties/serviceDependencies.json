@@ -1,11 +1,8 @@
 {
   "dependencies": {
-    "mssql1": {
-      "type": "mssql",
-      "connectionId": "Web_APIContextConnection"
-    },
     "secrets1": {
-      "type": "secrets"
+      "type": "secrets",
+      "connectionId": "ASPNETCORE_HOSTINGSTARTUP__KEYVAULT__CONFIGURATIONVAULT"
     }
   }
 }
