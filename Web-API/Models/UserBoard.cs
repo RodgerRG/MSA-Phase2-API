@@ -7,11 +7,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Web_API.Models
 {
-    public class UserLeague
+    public class UserBoard
     {
         public int leagueId { get; set; }
         public int userId { get; set; }
         public User user { get; set; }
-        public League league { get; set; }
+        public Board board { get; set; }
+        public int rep { get; set; }
     }
 }

@@ -7,21 +7,26 @@ using System.Threading.Tasks;
 
 namespace Web_API.Models
 {
-    public class League
+    public class Board
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int leagueId { get; set; }
         public int ownerId { get; set; }
 
+        [Required]
+        public string location { get; set; }
+
         [ForeignKey("ownerId")]
         public User owner { get; set; }
 
-        public List<UserLeague> users { get; set; }
+        public List<UserBoard> users { get; set; }
 
-        public League()
+        public List<Job> jobs { get; set; }
+
+        public Board()
         {
-            users = new List<UserLeague>();
+            users = new List<UserBoard>();
         }
     }
 }

@@ -18,7 +18,7 @@ namespace Web_API.Models
         [Required]
         public string Gender { get; set; }
 
-        public List<UserLeague> leagues { get; set; }
+        public List<UserBoard> leagues { get; set; }
 
         public User(UserDTO dto)
         {
@@ -27,13 +27,11 @@ namespace Web_API.Models
             this.Email = dto.email;
             this.Gender = dto.gender;
             this.UserName = dto.username;
-
-
         }
 
         //Required for migrations
         public User() {
-            leagues = new List<UserLeague>();
+            leagues = new List<UserBoard>();
         }
     }
 }
