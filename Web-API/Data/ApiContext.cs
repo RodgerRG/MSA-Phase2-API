@@ -16,26 +16,27 @@ namespace Web_API.Data
 
         }
 
-        DbSet<User> users { get; set; }
-        DbSet<League> leagues { get; set; }
-        DbSet<UserLeague> userLeague { get; set; }
+        public DbSet<User> users { get; set; }
+        public DbSet<Board> leagues { get; set; }
+        public DbSet<UserBoard> userBoard { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            //setup keys and principal keys
-            modelBuilder.Entity<UserLeague>().HasKey(ul => new { ul.userId, ul.leagueId });
-            modelBuilder.Entity<UserLeague>()
-                .HasOne(ul => ul.league)
+            //setup FK relationship
+            modelBuilder.Entity<UserBoard>()
+                .HasOne(ul => ul.board)
                 .WithMany(l => l.users)
-                .HasForeignKey(ul => ul.leagueId)
+                .HasForeignKey(ul => ul.boardId)
                 .OnDelete(DeleteBehavior.ClientCascade);
-            modelBuilder.Entity<UserLeague>()
+            modelBuilder.Entity<UserBoard>()
                 .HasOne(ul => ul.user)
                 .WithMany(u => u.leagues)
                 .HasForeignKey(ul => ul.userId)
                 .OnDelete(DeleteBehavior.ClientCascade);
         }
+
+        public DbSet<Web_API.Models.Job> Job { get; set; }
     }
 }

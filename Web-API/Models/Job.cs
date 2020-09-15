@@ -13,7 +13,6 @@ namespace Web_API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int jobId { get; set; }
         public int posterId { get; set; }
-        public int boardId { get; set;}
         public string mediaURI { get; set; }
 
         [Required]
@@ -22,15 +21,8 @@ namespace Web_API.Models
         public string location { get; set; }
         [Required]
         public bool isCompleted { get; set; }
-        public int workerId { get; set; }
 
         [ForeignKey("posterId")]
-        public User poster { get; set; }
-
-        [ForeignKey("boardId")]
-        public Board board { get; set; }
-
-        [ForeignKey("workerId")]
-        public User worker { get; set; }
+        public UserBoard poster { get; set; }
     }
 }

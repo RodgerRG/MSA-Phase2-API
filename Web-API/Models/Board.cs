@@ -11,7 +11,7 @@ namespace Web_API.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int leagueId { get; set; }
+        public int boardId { get; set; }
         public int ownerId { get; set; }
 
         [Required]
