@@ -2,16 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Web_API.Data;
+using Web_API.DTOs;
 using Web_API.Models;
 
 namespace Web_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BoardsController : ControllerBase
     {
         private readonly ApiContext _context;
@@ -23,23 +26,42 @@ namespace Web_API.Controllers
 
         // GET: api/Boards
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Board>>> Getleagues()
+        public async Task<ActionResult<IEnumerable<BoardListDTO>>> GetBoards()
         {
-            return await _context.leagues.ToListAsync();
+            List<BoardListDTO> ids = new List<BoardListDTO>();
+            List<Board> boards = await _context.leagues.ToListAsync();
+            foreach(Board b in boards)
+            {
+                BoardListDTO simpleBoard = new BoardListDTO();
+                simpleBoard.boardId = b.boardId;
+                simpleBoard.boardName = b.boardName;
+                ids.Add(simpleBoard);
+            }
+            return ids;
         }
 
         // GET: api/Boards/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Board>> GetBoard(int id)
+        [HttpGet("{boardId}")]
+        public async Task<ActionResult<BoardDTO>> GetBoard(int boardId)
         {
-            var board = await _context.leagues.FindAsync(id);
+            //Eagerly load in all the info we need.
+            var board = await _context.leagues.Include(b => b.jobs)
+                .ThenInclude(j => j.poster)
+                .ThenInclude(p => p.user)
+                .Where(b => b.boardId == boardId).FirstOrDefaultAsync();
 
             if (board == null)
             {
                 return NotFound();
             }
 
-            return board;
+            var boardDTO = new BoardDTO();
+            boardDTO.boardId = board.boardId;
+            boardDTO.boardName = board.boardName;
+            boardDTO.ownerId = board.ownerId;
+            boardDTO.jobs = JobDTO.convertJobs(board.jobs);
+
+            return boardDTO;
         }
 
         // PUT: api/Boards/5
@@ -78,12 +100,35 @@ namespace Web_API.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<Board>> PostBoard(Board board)
+        public async Task<ActionResult<BoardDTO>> AddBoard([FromBody] BoardDTO newBoard)
         {
+            Board board = new Board();
+            User owner = await _context.users.FindAsync(newBoard.ownerId);
+            board.ownerId = owner.Id;
+            board.owner = owner;
+            board.boardName = newBoard.boardName;
+            //I'm probably not going to have enough time to get this working
+            board.location = "";
+
+            UserBoard userBoard = new UserBoard();
+            userBoard.boardId = board.boardId;
+            userBoard.userId = owner.Id;
+            userBoard.board = board;
+            userBoard.user = owner;
+            userBoard.hasJob = false;
+            userBoard.rep = 0;
+
             _context.leagues.Add(board);
+            _context.userBoard.Add(userBoard);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetBoard", new { id = board.boardId }, board);
+            BoardDTO dto = new BoardDTO();
+            dto.boardId = board.boardId;
+            dto.ownerId = owner.Id;
+            dto.boardName = board.boardName;
+            dto.jobs = JobDTO.convertJobs(board.jobs);
+
+            return CreatedAtAction("GetBoard", new { boardId = board.boardId }, dto);
         }
 
         // DELETE: api/Boards/5

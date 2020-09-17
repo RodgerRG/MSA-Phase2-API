@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Web_API.Data;
 using Web_API.DTOs;
 using Web_API.Models;
@@ -20,14 +25,16 @@ namespace Web_API.Controllers
     public class UserController : ControllerBase
     {
         private readonly ApiContext _context;
+        public IConfiguration _config;
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
 
-        public UserController(ApiContext context, UserManager<User> userManager, SignInManager<User> signInManager)
+        public UserController(ApiContext context, UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
         {
             _context = context;
             _userManager = userManager;
             _signInManager = signInManager;
+            _config = configuration;
         }
 
         //I don't know why CORS doesn't seem to be working, despite being set up in Startup. I'm returning the 200 for the preflight here.
@@ -90,10 +97,41 @@ namespace Web_API.Controllers
 
             if(result.Succeeded)
             {
-                return Ok();
+                User user = (User)_context.Users.Where(user => user.UserName == loginDTO.username).FirstOrDefault();
+                List<Claim> claims = new List<Claim>()
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName)
+                };
+
+                var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSecret"]));
+                var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+                SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = DateTime.Now.AddMinutes(30),
+                    SigningCredentials = credentials
+                };
+
+                JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
+                SecurityToken token = handler.CreateToken(tokenDescriptor);
+
+                return Ok(new { Token = handler.WriteToken(token), Message = "Success", Id = user.Id });
             }
 
             return Forbid();
+        }
+
+        [HttpDelete]
+        public async Task<ActionResult<LoginDTO>> RemoveUser([FromBody] LoginDTO user)
+        {
+            User toDelete = (User) _context.Users.Where(u => u.UserName == user.username && u.Email == user.email).FirstOrDefault();
+
+            _context.Users.Remove(toDelete);
+            await _context.SaveChangesAsync();
+
+            return user;
         }
     }
 }

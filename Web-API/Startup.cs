@@ -14,6 +14,10 @@ using Web_API.Models;
 using Web_API.Data;
 using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Azure.KeyVault;
+using Web_API.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Web_API
 {
@@ -91,6 +95,72 @@ namespace Web_API
                 };
             });
 
+            services.AddAuthentication(x => {
+                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.SaveToken = true;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtSecret"])),
+                        ValidIssuer = Configuration["JwtIssuer"],
+                        ValidAudience = Configuration["JwtAudience"],
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
+                    };
+                })
+                .AddFacebook(options =>
+                {
+                    var facebookSettings = Configuration.GetSection("Facebook").Get<FacebookSettings>();
+
+                    string AppId = "";
+                    string AppSecret = "";
+                    if (facebookSettings != null)
+                    {
+                        AppId = facebookSettings.AppId;
+                        AppSecret = facebookSettings.AppSecret;
+                    }
+                    else
+                    {
+                        AppId = Configuration["Facebook-App-Id"];
+                        AppSecret = Configuration["Facebook-App-Secret"];
+                    }
+
+
+                    options.AppId = AppId;
+                    options.AppSecret = AppSecret;
+                    options.CallbackPath = "/signin-facebook";
+                    options.Validate();
+                })
+                .AddGoogle(options =>
+                {
+                var googleSettings = Configuration.GetSection("Google").Get<GoogleSettings>();
+
+                string AppId = "";
+                string AppSecret = "";
+                if (googleSettings != null)
+                {
+                    AppId = googleSettings.ClientId;
+                    AppSecret = googleSettings.ClientSecret;
+                }
+                else
+                {
+                    AppId = Configuration["Google-Client-Id"];
+                    AppSecret = Configuration["Google-Client-Secret"];
+                }
+
+
+                options.ClientId = AppId;
+                options.ClientSecret = AppSecret;
+                options.CallbackPath = "/signin-google";
+                options.Validate();
+                });
+
+
             services.Configure<PasswordHasherOptions>(option =>
             {
                 option.IterationCount = 1778;
@@ -117,61 +187,13 @@ namespace Web_API
                 options.User.RequireUniqueEmail = true;
             });
 
-            services.AddAuthentication()
-            .AddFacebook(options =>
-            {
-                var facebookSettings = Configuration.GetSection("Facebook").Get<FacebookSettings>();
-
-                string AppId = "";
-                string AppSecret = "";
-                if(facebookSettings != null)
-                {
-                    AppId = facebookSettings.AppId;
-                    AppSecret = facebookSettings.AppSecret;
-                } else
-                {
-                    AppId = Configuration["Facebook-App-Id"];
-                    AppSecret = Configuration["Facebook-App-Secret"];
-                }
-
-
-                options.AppId = AppId;
-                options.AppSecret = AppSecret;
-                options.CallbackPath = "/signin-facebook";
-                options.Validate();
-            })
-            .AddGoogle(options =>
-            {
-                var googleSettings = Configuration.GetSection("Google").Get<GoogleSettings>();
-
-                string AppId = "";
-                string AppSecret = "";
-                if (googleSettings != null)
-                {
-                    AppId = googleSettings.ClientId;
-                    AppSecret = googleSettings.ClientSecret;
-                }
-                else
-                {
-                    AppId = Configuration["Google-Client-Id"];
-                    AppSecret = Configuration["Google-Client-Secret"];
-                }
-
-
-                options.ClientId = AppId;
-                options.ClientSecret = AppSecret;
-                options.CallbackPath = "/signin-google";
-                options.Validate();
-            });
-
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigins",
                     builder =>
                     {
                         builder.WithOrigins("http//localhost:3000")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowCredentials();
                     });
             });
 
@@ -186,16 +208,17 @@ namespace Web_API
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+           // app.UseHttpsRedirection();
 
             app.UseRouting();
 
             app.UseCors(options => 
             {
-                options.SetIsOriginAllowed(x => _ = true)
+                options.WithOrigins("localhost:3000", "https://phase2-app.azurewebsites.net")
+                    .AllowCredentials()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .AllowCredentials();
+                    .Build();
             });
 
             app.UseAuthentication();
@@ -204,6 +227,7 @@ namespace Web_API
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<SignalRHub>("/hub");
             });
 
             app.UseSwagger();

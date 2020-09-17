@@ -16,6 +16,8 @@ namespace Web_API.Models
 
         [Required]
         public string location { get; set; }
+        [Required]
+        public string boardName { get; set; }
 
         [ForeignKey("ownerId")]
         public User owner { get; set; }
@@ -27,6 +29,7 @@ namespace Web_API.Models
         public Board()
         {
             users = new List<UserBoard>();
+            jobs = new List<Job>();
         }
     }
 }

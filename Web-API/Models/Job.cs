@@ -16,11 +16,15 @@ namespace Web_API.Models
         public string mediaURI { get; set; }
 
         [Required]
+        public string jobTitle { get; set; }
+        [Required]
         public string jobDescription { get; set; }
         [Required]
         public string location { get; set; }
         [Required]
         public bool isCompleted { get; set; }
+        [Required]
+        public bool isTaken { get; set; }
 
         [ForeignKey("posterId")]
         public UserBoard poster { get; set; }

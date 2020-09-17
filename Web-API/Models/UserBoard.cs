@@ -16,6 +16,9 @@ namespace Web_API.Models
         public int userId { get; set; }
         public User user { get; set; }
         public Board board { get; set; }
+
+        [Required]
+        public bool hasJob { get; set; }
         public int rep { get; set; }
     }
 }
